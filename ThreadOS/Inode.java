@@ -67,7 +67,6 @@ public class Inode {
      SysLib.rawwrite(blockNum, data);							// write to disk
    }
 
-<<<<<<< HEAD
    public short findTargetBlock(int seekPtr)
    {
         int block, iOffset;
@@ -92,10 +91,9 @@ public class Inode {
         SysLib.rawread(indirect, data);
         indirect = -1;
         return data;
-=======
-   // return the indirect pointer of iNode
-   short getIndexBlockNumber(){
-   	return indirect;
+        // return the indirect pointer of iNode
+        short getIndexBlockNumber(){
+   	    return indirect;
    }
 
    // set indirect block pointer to given index
@@ -122,11 +120,6 @@ public class Inode {
 			SysLib.rawwrite(indexBlockNumber, data);
 			return true;
 	   }
-   }
-
-   // find the target block by given offset
-   short findTargetBlock(int offset){
-   	// done by Iris
    }
 
    // return target block by given offset
@@ -161,6 +154,31 @@ public class Inode {
 		}
 		// if the indirect < 0
 		return -2;
->>>>>>> fd8164442b717f94d3ed5c750f880de05ad0c669
+   }
+
+   public short findTargetBlock(int seekPtr)
+   {
+        int block, iOffset;
+        block = offset / Disk.blockSize;
+
+        if(block < directSize)
+            return direct[block];
+        if(indirect == -1)
+            return -1;
+
+        byte[] data = new byte[Disk.blockSize];
+        SysLib.rawread(indirect, data);
+        iOffset = block - directSize;
+        return SysLib.bytes2short(data, iOffset * 2);
+   }
+
+   public byte[] freeIndirectBlock()
+   {
+        if(indirect == -1)
+            return null;
+        byte[] data = new byte[512];
+        SysLib.rawread(indirect, data);
+        indirect = -1;
+        return data;
    }
 }
