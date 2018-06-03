@@ -66,5 +66,54 @@ public class Inode {
 			
      SysLib.rawwrite(blockNum, data);							// write to disk
    }
+
+   // return the indirect pointer
+   int findIndexBlock(){
+   	return indirect;
+   }
+
+   // set indirect block with -1
+   boolean setIndexBlock(short indexBlockNumber){
+   		//if any direct block unused, return false
+		for(int i = 0; i < 11; i++){
+			if(direct[i] == -1){
+				return false;
+			}
+		}
+		// if the indirect block been used, return false
+	   if (indirect != -1){
+			return false;
+	   }
+	   else{
+			indirect = indexBlockNumber;
+			byte data = new byte[512];
+
+		    // write 265 indirect pointers with -1
+			for (int i = 0; i < 256; i++){
+				SysLib.short2bytes((short)-1, data, i*2);
+			}
+
+			SysLib.rawwrite(indexBlockNumber, data);
+			return true;
+	   }
+   }
+
+   // find the target block by given offset
+   short findTargetBlock(int offset){
+   	// done
+   }
+
+   //
+   int setTargetBlock(int offset, short block){
+   		if (offset / 512 < 11){
+   			direct[offset/512] = block;
+   			return 0;
+		}
+
+   }
+
+   short getIndexBlockNumber(){
+
+   }
    
 }

@@ -28,26 +28,22 @@ public class FileTable {
                 iNum = this.dir.namei(filename);
             }
 
-            if (iNum < 0){
-                SysLib.cout << "iNumber can smaller than 0, back to fileTable.java (falloc function)";
-            }
-
             if(iNum >= 0) {
                 inode = new Inode(iNum);
 
-                if (fileNode.flag == 2) { // delete mode
-                    return null;
+                // read-only mode
+                if (mode.compareTo("r") == 0) {
+                    if (inode.flag != 3) {
+                        inode.flag = 2;
+                        break;
+                    }
                 }
-                if (fileNode.flag == 0 || fileNode.flag == 1) {
-                    break;
-                }
-                if (entryMode == 0 && fileNode.flag == 0) {
-                    break;
-                }
-                try {
-                    wait();
-                }
-                catch (InterruptedException e) {
+                // mode is w, w+, or a, set mode to 3 (wait mode)
+                else {
+                    if (inode.flag < 2) {
+                        inode.flag = 3;
+                        break;
+                    }
                 }
             }
         }
