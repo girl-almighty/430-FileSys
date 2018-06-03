@@ -48,7 +48,7 @@ public class Inode {
      byte[] data = new byte[512];
      
      int blockNum = 1 + iNumber / 16;							// find the block where the inode is
-     SysLib.rawread(block,data);									// read origin block
+     SysLib.rawread(blockNum,data);									// read origin block
      
      int offset = (iNumber % 16) * 32;						// find offset in the block 
 			SysLib.int2bytes(length, data, offset);			// write to buffer
@@ -66,5 +66,30 @@ public class Inode {
 			
      SysLib.rawwrite(blockNum, data);							// write to disk
    }
-   
+
+   public short findTargetBlock(int seekPtr)
+   {
+        int block, iOffset;
+        block = offset / Disk.blockSize;
+
+        if(block < directSize)
+            return direct[block];
+        if(indirect == -1)
+            return -1;
+
+        byte[] data = new byte[Disk.blockSize];
+        SysLib.rawread(indirect, data);
+        iOffset = block - directSize;
+        return SysLib.bytes2short(data, iOffset * 2);
+   }
+
+   public byte[] freeIndirectBlock()
+   {
+        if(indirect == -1)
+            return null;
+        byte[] data = new byte[512];
+        SysLib.rawread(indirect, data);
+        indirect = -1;
+        return data;
+   }
 }
