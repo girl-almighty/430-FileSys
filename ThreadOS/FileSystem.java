@@ -73,7 +73,7 @@ public class FileSystem
             return false;
 
         // returning direct disk blocks to free list
-        for(short dirBlock; dirBlock < fte.inode.directSize; dirBlock++)
+        for(short dirBlock = 0; dirBlock < fte.inode.directSize; dirBlock++)
         {
             if(fte.inode.direct[dirBlock] == -1)
                 continue;
