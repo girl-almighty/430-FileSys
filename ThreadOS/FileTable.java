@@ -57,6 +57,7 @@ public class FileTable {
                     else
                     {
                         inode.flag = READ;
+                        break;
                     }
                 }
                 else if(mode.equals("w") || mode.equals("w+") || mode.equals("a"))
@@ -68,6 +69,7 @@ public class FileTable {
                     }
                     else
                         inode.flag = WRITE;
+                        break;
                 }
             }
         }
