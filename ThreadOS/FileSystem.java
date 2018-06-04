@@ -53,6 +53,7 @@ public class FileSystem
         if(fName == "" || mode == "")
             return null;
         FileTableEntry newFte = fileTable.falloc(fName, mode);
+        SysLib.cout("---------------------------------------------");
         if(newFte == null || newFte.inode.flag == 4)
         {
             fileTable.ffree(newFte);

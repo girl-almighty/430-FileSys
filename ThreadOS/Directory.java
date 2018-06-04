@@ -23,16 +23,17 @@ public class Directory
     // allocates a new inode number for this filename
     public short ialloc(String fName)
     {
-        for(short i = 0; i < fsizes.length; i++)
+        for(short i = 1; i < fsizes.length; i++)
         {
-            if(fsizes[i] > 0)
+            if(fsizes[i] != 0)
                 continue;
             int size = fName.length(); 
-            if(size > 0)
+            if(size > maxChars)
                 size = maxChars;
 
             fsizes[i] = size;
             fName.getChars(0, fsizes[i], fnames[i], 0);
+            return i;
         }
         return ERROR;
     }
