@@ -1,5 +1,8 @@
 import java.util.Vector;
 public class FileTable {
+    private static final int DELETE = 2;
+    private final static int READ = 3;
+    private static final int WRITE = 4;
 
     private Vector<FileTableEntry> table;         // the actual entity of this file table
     private Directory dir;        // the root directory
@@ -20,46 +23,61 @@ public class FileTable {
         short iNum = -1;
         Inode inode = null;
 
-        while (true){
-
-            // since directory consider as a file, if it is a root, then set to inode 0
-            if (filename.equals("/")) {
+        while (true)
+        {
+            // since directory considered as a file, if it is a root, then set to inode 0
+            if (filename.equals("/"))
                 iNum = 0;
-            } else {
+            else
                 iNum = this.dir.namei(filename);
-            }
 
-            if (iNum < 0){
-                SysLib.cout("iNumber can smaller than 0, back to fileTable.java (falloc function)");
+            if (iNum < 0)
+            {
+                if(!mode.equals("r"))
+                {
+                    inode = new Inode();
+                    inode.flag = WRITE;
+                    iNum = dir.ialloc(filename);
+                }
+                break;
             }
-
-            if(iNum >= 0) {
+            else if(iNum >= 0) 
+            {
                 inode = new Inode(iNum);
 
-                if (inode.flag == 2) { // delete mode
-                    return null;
+                if(mode.equals("r"))
+                {
+                    if(inode.flag == READ)
+                        break;
+                    else if(inode.flag == WRITE)
+                    {
+                        try { wait(); }
+                        catch (InterruptedException e) {}
+                    }
+                    else
+                    {
+                        inode.flag = READ;
+                    }
                 }
-                if (inode.flag == 0 || inode.flag == 1) {
-                    break;
-                }
-                if (mode.equals(0) && inode.flag == 0) {
-                    break;
-                }
-                try {
-                    wait();
-                }
-                catch (InterruptedException e) {
+                else if(mode.equals("w") || mode.equals("w+") || mode.equals("a"))
+                {
+                    if(inode.flag == READ || inode.flag == WRITE)
+                    {
+                        try { wait(); }
+                        catch (InterruptedException e) {}
+                    }
+                    else
+                        inode.flag = WRITE;
                 }
             }
         }
-        // allocate a new file table entry for this file name
-        FileTableEntry newEntry = new FileTableEntry(inode,iNum,mode);
-        // add new entry to filetable
-        table.add(newEntry);
-        // increment this inode's count
-        inode.count++;
-        // write back inode to the disk
-        inode.toDisk(iNum);
+
+        if(inode == null)
+            return null;
+        FileTableEntry newEntry = new FileTableEntry(inode,iNum,mode); // allocate a new file table entry for this file name
+        table.add(newEntry);    // add new entry to filetable
+        inode.count++;          // increment this inode's count
+        inode.toDisk(iNum);     // write back inode to the disk 
         return newEntry;
     }
 
