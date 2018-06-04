@@ -81,6 +81,16 @@ public class SysLib {
 				 Kernel.CSYNC, 0, null );
     }
 
+    /*
+    Closes the file corresponding to fd, commits all file transactions on this file,
+    and unregisters fd from the user file descriptor table of the calling thread's TCB.
+    The return value is 0 in success, otherwise -1.
+    */
+    public static int close( int fd) {
+        return Kernel.interrupt( Kernel.INTERRUPT_SOFTWARE,
+                Kernel.CLOSE, fd, null );
+    }
+
     public static String[] stringToArgs( String s ) {
 	StringTokenizer token = new StringTokenizer( s," " );
 	String[] progArgs = new String[ token.countTokens( ) ];

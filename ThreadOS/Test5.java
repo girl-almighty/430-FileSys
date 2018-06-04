@@ -62,6 +62,7 @@ class Test5 extends Thread {
   private boolean test1( ) {
     //.............................................."
     SysLib.cout( "1: format( " + files + " )..................." );
+    SysLib.cout("--- " + files + " ---/n");
     SysLib.format( files );
     byte[] superblock = new byte[512];
     SysLib.rawread( 0, superblock );
