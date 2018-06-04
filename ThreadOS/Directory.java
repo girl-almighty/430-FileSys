@@ -2,18 +2,20 @@ public class Directory
 {
     private static final int CHAR_BYTES = 2;
     private static final int INT_BYTES = 4;
+    private static final int ERROR = -1;
     private static int maxChars = 30;
     private int fsizes[];
     private char fnames[][];
 
     public Directory(int maxInumber)
     {
+        fnames = new char[maxInumber][maxChars];
         fsizes = new int[maxInumber];
-        for(int i = 0l i < maxInumber; i++)
+        for(int i = 0; i < maxInumber; i++)
             fsizes[i] = 0;
 
         String root = "/";
-        fizes[0] = rootl.length();
+        fsizes[0] = root.length();
         root.getChars(0, fsizes[0], fnames[0], 0);
     }
 
@@ -25,7 +27,8 @@ public class Directory
         {
             if(fsizes[i] > 0)
                 continue;
-            if((int size = fName.length()) > 0)
+            int size = fName.length(); 
+            if(size > 0)
                 size = maxChars;
 
             fsizes[i] = size;
@@ -39,7 +42,7 @@ public class Directory
     public boolean ifree(short iNumber)
     {
         if(fsizes[iNumber] == 0)
-            return ERROR;
+            return false;
         fsizes[iNumber] = 0;
         return true;
     }
@@ -49,10 +52,10 @@ public class Directory
     {
         for(short i = 0; i < fsizes.length; i++)
         {
-            if(fsizes[i] != filename.length())
+            if(fsizes[i] != fName.length())
                 continue;
             String cur = new String(fnames[i], 0, fsizes[i]);
-            if(cur.equals(filename))
+            if(cur.equals(fName))
                 return i;
         }
         return ERROR;
@@ -68,7 +71,7 @@ public class Directory
         for(int i = 0; i < fnames.length; i++, offset += maxChars*2)
         {
             String fname = new String(data, offset, maxChars*2);
-            fname.getChars(0, fsizes[i] fnames[i], 0);
+            fname.getChars(0, fsizes[i], fnames[i], 0);
         }
     }
 
@@ -76,20 +79,20 @@ public class Directory
     // this byte array will be written back to disk
     // note: only meaningfull directory information should be converted
     // into bytes.
-    public void directory2bytes()
+    public byte[] directory2bytes()
     {
-        byte[] dirBuf = new byte[(fsizes.length * INT_BYTES) + (fnames * maxChars * CHAR_BYTES)];
+        byte[] dirBuf = new byte[(fsizes.length * INT_BYTES) + (fnames.length * maxChars * CHAR_BYTES)];
         int offSet = 0;
 
         for(int i = 0; i < fsizes.length; i++, offSet += INT_BYTES)
-            SysLib.int2bytes(fsizes[i], dirBuf, offset);
+            SysLib.int2bytes(fsizes[i], dirBuf, offSet);
         for(int i = 0; i < fnames.length; i++, offSet += maxChars * CHAR_BYTES)
         {
             String fname = new String(fnames[i], 0, fsizes[i]);
             byte dirBytes[] = fname.getBytes();
 
             for(int j = 0; i < dirBytes.length; j++)
-                dirBuf[j + offset] = dirBytes[j];
+                dirBuf[j + offSet] = dirBytes[j];
         }
         return dirBuf;
     }

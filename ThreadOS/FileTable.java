@@ -1,10 +1,11 @@
+import java.util.Vector;
 public class FileTable {
 
-    private Vector table;         // the actual entity of this file table
+    private Vector<FileTableEntry> table;         // the actual entity of this file table
     private Directory dir;        // the root directory
 
     public FileTable( Directory directory ) { // constructor
-        table = new Vector( );     // instantiate a file (structure) table
+        table = new Vector<FileTableEntry>( );     // instantiate a file (structure) table
         dir = directory;           // receive a reference to the Director
     }                             // from the file system
 
@@ -29,19 +30,19 @@ public class FileTable {
             }
 
             if (iNum < 0){
-                SysLib.cout << "iNumber can smaller than 0, back to fileTable.java (falloc function)";
+                SysLib.cout("iNumber can smaller than 0, back to fileTable.java (falloc function)");
             }
 
             if(iNum >= 0) {
                 inode = new Inode(iNum);
 
-                if (fileNode.flag == 2) { // delete mode
+                if (inode.flag == 2) { // delete mode
                     return null;
                 }
-                if (fileNode.flag == 0 || fileNode.flag == 1) {
+                if (inode.flag == 0 || inode.flag == 1) {
                     break;
                 }
-                if (entryMode == 0 && fileNode.flag == 0) {
+                if (mode.equals(0) && inode.flag == 0) {
                     break;
                 }
                 try {

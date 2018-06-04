@@ -21,7 +21,7 @@ public class Inode {
    Inode( short iNumber ) {                  			// retrieving inode from disk
      // design it by yourself.
      int blockNum = 1 + iNumber / 16;							// find the disk block with inode number
-     byte data[] = new byte[512]								// setting the buffer size of a block 512 byte
+     byte data[] = new byte[512];								// setting the buffer size of a block 512 byte
 	   SysLib.rawread(blockNum, data);							// read from inode block into data buffer
 
 	   int offset = (iNumber % 16) * iNodeSize;		// locate where we are
@@ -42,7 +42,7 @@ public class Inode {
    }
 
 	 // write the iNumber inode in to disk 
-   int toDisk( short iNumber ) {              
+   public void toDisk( short iNumber ) {              
      // design it by yourself.
      
      byte[] data = new byte[512];
@@ -66,33 +66,9 @@ public class Inode {
 			
      SysLib.rawwrite(blockNum, data);							// write to disk
    }
-
-   public short findTargetBlock(int seekPtr)
-   {
-        int block, iOffset;
-        block = offset / Disk.blockSize;
-
-        if(block < directSize)
-            return direct[block];
-        if(indirect == -1)
-            return -1;
-
-        byte[] data = new byte[Disk.blockSize];
-        SysLib.rawread(indirect, data);
-        iOffset = block - directSize;
-        return SysLib.bytes2short(data, iOffset * 2);
-   }
-
-   public byte[] freeIndirectBlock()
-   {
-        if(indirect == -1)
-            return null;
-        byte[] data = new byte[512];
-        SysLib.rawread(indirect, data);
-        indirect = -1;
-        return data;
         // return the indirect pointer of iNode
-        short getIndexBlockNumber(){
+
+   short getIndexBlockNumber(){
    	    return indirect;
    }
 
@@ -110,7 +86,7 @@ public class Inode {
 	   }
 	   else{
 			indirect = indexBlockNumber;
-			byte data = new byte[512];
+			byte[] data = new byte[512];
 
 		    // write 265 indirect pointers with -1
 			for (int i = 0; i < 256; i++){

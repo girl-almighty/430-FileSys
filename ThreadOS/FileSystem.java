@@ -2,7 +2,7 @@ public class FileSystem
 {
     private SuperBlock superBlock;
     private Directory directory;
-    private FileStructureTable fileTable;
+    private FileTable fileTable;
 
     private static final int SEEK_SET = 0;
     private static final int SEEK_CUR = 1;
@@ -13,7 +13,7 @@ public class FileSystem
     {
         superBlock = new SuperBlock(diskBlocks);
         directory = new Directory(superBlock.totalInodes);
-        fileTable = new FileStructureTable(directory);
+        fileTable = new FileTable(directory);
 
         FileTableEntry dirEnt = open ("/", "r");
         int dirSize = fsize(dirEnt);
@@ -21,7 +21,7 @@ public class FileSystem
         {
             byte[] dirData = new byte[dirSize];
             read(dirEnt, dirData);
-            directory.bytes2directory(dirdata);
+            directory.bytes2directory(dirData);
         }
         close(dirEnt);
     }
@@ -37,12 +37,14 @@ public class FileSystem
     public boolean format(int files)
     {
         if(files <= 0)
-            return ERROR;
+            return false;
+        //if(!fileTable.fempty())
+        //    return false;
         while(!fileTable.fempty())
             ;
         superBlock.format(files);
         directory = new Directory(superBlock.totalInodes);
-        fileTable = new FileStructureTable(directory);
+        fileTable = new FileTable(directory);
         return true;
     }
 
@@ -73,7 +75,7 @@ public class FileSystem
             return false;
 
         // returning direct disk blocks to free list
-        for(short dirBlock = 0; dirBlock < fte.inode.directSize; dirBlock++)
+        for(short dirBlock = 0; dirBlock < fte.inode.direct.length; dirBlock++)
         {
             if(fte.inode.direct[dirBlock] == -1)
                 continue;
@@ -83,16 +85,19 @@ public class FileSystem
 
         byte[] data = fte.inode.freeIndirectBlock();
         if(data != null)
-            if((int indirect = SysLib.bytes2short(data, 0)) != -1)
+        {
+            int indirect = SysLib.bytes2short(data, 0);
+            if(indirect != -1)
                 superBlock.returnBlock(indirect);
+        }
 
         fte.inode.toDisk(fte.iNumber);
         return true;
     }
 
-    publc int read(FileTableEntry fte, byte buf[])
+    public int read(FileTableEntry fte, byte buf[])
     {
-        if(fte == null || fte.mode = "w")
+        if(fte == null || fte.mode == "w")
             return ERROR;
 
         int fteSize = fsize(fte);
@@ -101,7 +106,8 @@ public class FileSystem
         {
             while(bytesRead < buf.length && fte.seekPtr < fteSize)
             {
-                if((int readBlock = fte.inode.findTargetBlock(fte.seekPtr)) == ERROR)
+                int readBlock = fte.inode.findTargetBlock(fte.seekPtr);
+                if(readBlock == ERROR)
                     break;
                 byte[] readBuf = new byte[Disk.blockSize];
                 SysLib.rawread(readBlock, readBuf);
@@ -124,7 +130,7 @@ public class FileSystem
 
     public int write(FileTableEntry fte, byte buf[])
     {
-        if(fte == null || fte.mode = "r")
+        if(fte == null || fte.mode == "r")
             return ERROR;
 
         int bytesWritten = 0;
@@ -143,14 +149,16 @@ public class FileSystem
                     short freeBlock = (short) superBlock.getFreeBlock();
 
                     // set an inode pointer to point to free block
-                    switch(toBeWritten = fte.inode.setTargetBlock(fte.seekPtr, freeBlock))
+                    toBeWritten = fte.inode.setTargetBlock(fte.seekPtr, freeBlock);
+                    switch(toBeWritten)
                     {
                         case -1: return ERROR; // invalid access to used inode pointer
                         case -2: // invalid access to indirect pointer that is never used
                             short inBlock = (short) superBlock.getFreeBlock(); // find free block for indirect block
-                            if(!fte.inode.setIndexBlock(freeBlock)) // format indirect block
+                            if(!fte.inode.setIndexBlockNumber(inBlock)) // format indirect block
                                 return ERROR;
-                            if((toBeWritten = fte.inode.setTargetBlock(fte.seekPtr, freeBlock)) == false) // add free block pointer to indirect pointer
+                            toBeWritten = fte.inode.setTargetBlock(fte.seekPtr, freeBlock); // add free block pointer to indirect pointer
+                            if(toBeWritten == -1 || toBeWritten == -2) 
                                 return ERROR;
                             break;
                         default: // pointer to free block stored in inode pointer 0 - 265
@@ -159,7 +167,7 @@ public class FileSystem
                 }
 
                 byte[] writeBuf = new byte[Disk.blockSize];
-                SysLib.rawread(toBeWritten, buffer);
+                SysLib.rawread(toBeWritten, writeBuf);
 
                 short seekOffset = (short) (fte.seekPtr % Disk.blockSize);
                 int bytesLeft = buf.length - bytesWritten;
@@ -221,7 +229,8 @@ public class FileSystem
 
     public boolean delete(String fName)
     {
-        if((FileTableEntry fte = open(fName, "r")) == null)
+        FileTableEntry fte = open(fName, "r");
+        if(fte == null)
             return false;
         short inode = fte.iNumber;
         if(close(fte))

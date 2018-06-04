@@ -1,4 +1,4 @@
-Public class SuperBlock 
+public class SuperBlock 
 {
     private final int defaultInodeBlocks = 64;
     public int totalBlocks;
@@ -27,7 +27,7 @@ Public class SuperBlock
     {
         byte[] block = new byte[512];
         SysLib.int2bytes(totalBlocks, block, 0);
-        SysLib.int2bytes(inodeBlocks, block, 4);
+        SysLib.int2bytes(totalInodes, block, 4);
         SysLib.int2bytes(freeList, block, 8);
         SysLib.rawwrite(0, block);
     }
@@ -65,7 +65,7 @@ Public class SuperBlock
 		return true;
     }
 
-    public int format(int files)
+    public void format(int files)
     {
         totalInodes = files;
 
@@ -75,10 +75,9 @@ Public class SuperBlock
             newInode.toDisk(i);
         }
 
+        int offSet = 2;
         if(totalInodes % 16 == 0)
-            int offSet = 1;
-        else
-            int offSet = 2;
+            offSet = 1;
         freeList = totalInodes / 16 + offSet;
 
         byte[] block;
@@ -88,8 +87,10 @@ Public class SuperBlock
             for(int j = 0; j < Disk.blockSize; j++)
                 block[j] = (byte) 0;
             SysLib.int2bytes(i+1, block, 0);
-            SysLib.rawwrite(totalBlocks - 1, block);        
+            SysLib.rawwrite(i, block);        
         }
+
+        block = new byte[Disk.blockSize];
         SysLib.int2bytes(-1, block, 0);
         SysLib.rawwrite(totalBlocks - 1, block);
         sync();
