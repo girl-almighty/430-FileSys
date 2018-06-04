@@ -21,21 +21,48 @@ Public class SuperBlock
             format(defaultInodeBlocks);
         }
     }
-
+	
+	// write private variables to the disk 
     public void sync()
     {
-        
+        byte[] block = new byte[512];
+        SysLib.int2bytes(totalBlocks, block, 0);
+        SysLib.int2bytes(inodeBlocks, block, 4);
+        SysLib.int2bytes(freeList, block, 8);
+        SysLib.rawwrite(0, block);
     }
+	
+	// return first freeBlock from freeList
+    public int getFreeBlock()
+	{
+        if (freeList != -1) {
+            byte[] data = new byte[512];
+            SysLib.rawread(freeList, data);
+			int freeBlock = freeList;
 
-    public getFreeBlock()
-    {
+            // update next free block
+            freeList = SysLib.bytes2int(data, 0);
+			SysLib.int2bytes(0,data,0);
+			SysLib.rawwrite(freeBlock,data);
+            return freeBlock;
+        }
 
+        return -1;
     }
 
     public boolean returnBlock(int blockNumber)
-    {
+    {	
+		if (blockNumber < 0){
+			return false;
+		}
         byte[] buf = new byte[Disk.blockSize];
-        SysLib.short2bytes((short))
+        for (int i = 0; i < 512; i++){
+			buf[i] = 0;
+		}
+		SysLib.int2bytes(freeList, buf, 0);
+		SysLib.rawwrite(blockNumber, buf);
+		freeList = blockNumber;
+		return true;
     }
 
     public int format(int files)
@@ -52,7 +79,7 @@ Public class SuperBlock
             int offSet = 1;
         else
             int offSet = 2;
-        freeList = numInodes / 16 + offSet;
+        freeList = totalInodes / 16 + offSet;
 
         byte[] block;
         for(int i = freeList; i < totalBlocks - 1; i++)

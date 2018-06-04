@@ -125,18 +125,16 @@ public class Inode {
    // return target block by given offset
    // return -1 on error,
    // if reach indirect block and it hasn't been used return -2
-	int setgetBlock(int offset, short block){
+	int setTargetBlock(int offset, short block){
    		int blockNum = offset / 512;
    		// if in the direct block
-   		if ( blockNum < 11){
+   		if ( blockNum < 11)
+        {
    			// if the direct block been used, return error
-   			if(direct[blockNum] != -1) {
+   			if(direct[blockNum] != -1)
 				return -1;
-			}
-			else{
-   				direct[blockNum] = block;
-   				return blockNum;
-			}
+			direct[blockNum] = block;
+			return blockNum;
 		}
 		// if indirect pointer been used
 		else if (indirect > 0) {
@@ -145,12 +143,9 @@ public class Inode {
 			SysLib.rawread(indirect,indblock);
 			// find indirect pointer
 			int indNumber = blockNum - 11;
-
-			else{
-				SysLib.short2bytes(block, indblock, indNumber * 2);
-				SysLib.rawwrite(indirect, indblock);
-				return blockNum;
-			}
+			SysLib.short2bytes(block, indblock, indNumber * 2);
+			SysLib.rawwrite(indirect, indblock);
+			return blockNum;
 		}
 		// if the indirect < 0
 		return -2;
@@ -159,7 +154,7 @@ public class Inode {
    public short findTargetBlock(int seekPtr)
    {
         int block, iOffset;
-        block = offset / Disk.blockSize;
+        block = seekPtr / Disk.blockSize;
 
         if(block < directSize)
             return direct[block];

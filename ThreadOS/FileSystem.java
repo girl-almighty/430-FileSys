@@ -90,10 +90,36 @@ public class FileSystem
         return true;
     }
 
-    publc int read(int fd, byte buf[])
+    publc int read(FileTableEntry fte, byte buf[])
     {
         if(fte == null || fte.mode = "w")
             return ERROR;
+
+        int fteSize = fsize(fte);
+        int bytesRead = 0;
+        synchronized(fte)
+        {
+            while(bytesRead < buf.length && fte.seekPtr < fteSize)
+            {
+                if((int readBlock = fte.inode.findTargetBlock(fte.seekPtr)) == ERROR)
+                    break;
+                byte[] readBuf = new byte[Disk.blockSize];
+                SysLib.rawread(readBlock, readBuf);
+
+                int offset = fte.seekPtr % Disk.blockSize;
+                int bytesLeft = buf.length - bytesRead;
+                int blockBytesAvailable = Disk.blockSize - offset;
+                int fteBytesAvailable = fteSize - fte.seekPtr;
+                // WHY?
+                int curReadSize = Math.min(bytesLeft, Math.min(blockBytesAvailable, fteBytesAvailable));
+
+                System.arraycopy(readBuf, offset, buf, bytesRead, curReadSize);
+
+                bytesRead += curReadSize;
+                fte.seekPtr += curReadSize;
+            }   
+            return bytesRead;
+        }
     }
 
     public int write(FileTableEntry fte, byte buf[])
@@ -101,19 +127,56 @@ public class FileSystem
         if(fte == null || fte.mode = "r")
             return ERROR;
 
-        int writtenBytes = 0;
-        int cur = 0;
+        int bytesWritten = 0;
 
         synchronized(fte)
         {
-            while(cur < total)
+            while(bytesWritten < buf.length)
             {
+                // find block number to be written
                 int toBeWritten = fte.inode.findTargetBlock(fte.seekPtr);
-                if(toBeWritten == -1)
+
+                // if block was not found
+                if(toBeWritten == ERROR)
                 {
-                    short newBlock = 
+                    // find free block
+                    short freeBlock = (short) superBlock.getFreeBlock();
+
+                    // set an inode pointer to point to free block
+                    switch(toBeWritten = fte.inode.setTargetBlock(fte.seekPtr, freeBlock))
+                    {
+                        case -1: return ERROR; // invalid access to used inode pointer
+                        case -2: // invalid access to indirect pointer that is never used
+                            short inBlock = (short) superBlock.getFreeBlock(); // find free block for indirect block
+                            if(!fte.inode.setIndexBlock(freeBlock)) // format indirect block
+                                return ERROR;
+                            if((toBeWritten = fte.inode.setTargetBlock(fte.seekPtr, freeBlock)) == false) // add free block pointer to indirect pointer
+                                return ERROR;
+                            break;
+                        default: // pointer to free block stored in inode pointer 0 - 265
+                            break;
+                    }
                 }
+
+                byte[] writeBuf = new byte[Disk.blockSize];
+                SysLib.rawread(toBeWritten, buffer);
+
+                short seekOffset = (short) (fte.seekPtr % Disk.blockSize);
+                int bytesLeft = buf.length - bytesWritten;
+                int bytesAvailable = Disk.blockSize - seekOffset;
+                int writeBytes = Math.min(bytesLeft, bytesAvailable);
+
+                //arraycopy(Object src, int srcPos, Object dest, int destPos, int length)
+                System.arraycopy(buf, bytesWritten, writeBuf, seekOffset, writeBytes);
+                SysLib.rawwrite(toBeWritten, writeBuf);
+
+                bytesWritten += writeBytes;
+                fte.seekPtr += writeBytes;
+                if(fte.seekPtr > fte.inode.length)
+                    fte.inode.length = fte.seekPtr;
             }
+            fte.inode.toDisk(fte.iNumber);
+            return bytesWritten;
         }
     }
 
