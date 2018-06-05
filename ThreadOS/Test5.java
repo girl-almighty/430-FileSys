@@ -62,7 +62,6 @@ class Test5 extends Thread {
   private boolean test1( ) {
     //.............................................."
     SysLib.cout( "1: format( " + files + " )..................." );
-    SysLib.cout("--- " + files + " ---/n");
     SysLib.format( files );
     byte[] superblock = new byte[512];
     SysLib.rawread( 0, superblock );
@@ -134,7 +133,7 @@ class Test5 extends Thread {
     byte[] tmpBuf = new byte[16];
     size = SysLib.read( fd, tmpBuf );
     if ( size != 16 ) {
-      SysLib.cout( "size = " + size + " (wrong)\n" );
+      SysLib.cout("size = " + size + " (wrong)\n" );
       SysLib.close( fd );
       return false;
     }

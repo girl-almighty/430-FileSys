@@ -38,8 +38,7 @@ public class FileSystem
     {
         if(files <= 0)
             return false;
-        //if(!fileTable.fempty())
-        //    return false;
+
         while(!fileTable.fempty())
             ;
         superBlock.format(files);
@@ -109,6 +108,7 @@ public class FileSystem
                 int readBlock = fte.inode.findTargetBlock(fte.seekPtr);
                 if(readBlock == ERROR)
                     break;
+
                 byte[] readBuf = new byte[Disk.blockSize];
                 SysLib.rawread(readBlock, readBuf);
 
@@ -180,6 +180,7 @@ public class FileSystem
 
                 bytesWritten += writeBytes;
                 fte.seekPtr += writeBytes;
+
                 if(fte.seekPtr > fte.inode.length)
                     fte.inode.length = fte.seekPtr;
             }

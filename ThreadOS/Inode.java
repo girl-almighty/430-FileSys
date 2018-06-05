@@ -38,7 +38,7 @@ public class Inode {
 		   offset += 2;
 	   }
 	   indirect = SysLib.bytes2short(data, offset);// indirect pointers
-
+       offset+=2;
    }
 
 	 // write the iNumber inode in to disk 
